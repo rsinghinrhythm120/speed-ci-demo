@@ -20,3 +20,10 @@ format = "gitleaks"
 [ci.tools.codeql]
 format = "sarif"
 cmd = "sh scripts/codeql.sh"
+
+# SonarQube Community Build on the developer's machine. GitHub's runners cannot reach
+# localhost, so in GitHub Actions speed ci shows this check as skipped.
+[ci.sonarqube]
+host_url = "http://localhost:9000"
+project_key = "speed-ci-demo-live"
+scanner_cmd = "$HOME/sonarqube-local/sonar-scanner-6.2.1.4610-macosx-aarch64/bin/sonar-scanner"

@@ -26,13 +26,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        check: ["eval", "lint", "typecheck", "secrets", "sast", "sca", "trivy", "gitleaks", "codeql"]
+        check: ["eval", "lint", "typecheck", "secrets", "sast", "sca", "trivy", "gitleaks", "codeql", "sonarqube"]
     steps:
       - name: Check out the project
         uses: actions/checkout@v4
         with:
           # Keep tokens out of .git/config, where the project's own scripts could read them.
           persist-credentials: false
+          # SonarQube needs the history to find new code and blame lines.
+          fetch-depth: 0
 
       - name: Check out SPEED
         uses: actions/checkout@v4
@@ -93,10 +95,12 @@ jobs:
           echo "$codeql_dir" >> "$GITHUB_PATH"
 
 
+
       - name: Run ${{ matrix.check }}
         env:
           # Forks and Dependabot get no secrets; checks that need one are skipped there.
           SPEED_CI_SECRETS_UNAVAILABLE: "${{ github.event_name == 'pull_request' && (github.event.pull_request.head.repo.fork || github.actor == 'dependabot[bot]') }}"
+          SONAR_TOKEN: "${{ (matrix.check == 'sonarqube') && secrets.SONAR_TOKEN || '' }}"
         run: speed --json ci --only "${{ matrix.check }}" > "$RUNNER_TEMP/speed-ci-report.json"
 
       - name: Upload this check's report
@@ -140,6 +144,8 @@ jobs:
         with:
           # Keep tokens out of .git/config, where the project's own scripts could read them.
           persist-credentials: false
+          # SonarQube needs the history to find new code and blame lines.
+          fetch-depth: 0
 
       - name: Check out SPEED
         uses: actions/checkout@v4
@@ -190,6 +196,7 @@ jobs:
         env:
           # Forks and Dependabot get no secrets; checks that need one are skipped there.
           SPEED_CI_SECRETS_UNAVAILABLE: "${{ github.event_name == 'pull_request' && (github.event.pull_request.head.repo.fork || github.actor == 'dependabot[bot]') }}"
+          SONAR_TOKEN: "${{ (matrix.check == 'sonarqube') && secrets.SONAR_TOKEN || '' }}"
         run: speed --json ci --only "${{ matrix.check }}" > "$RUNNER_TEMP/speed-ci-report.json"
 
       - name: Upload this check's report
@@ -227,7 +234,7 @@ jobs:
       - name: Combine the results
         run: |
           status=0
-          python3 .speed-tool/lib/ci_tools.py merge merged reports/speed-ci-check-eval reports/speed-ci-check-lint reports/speed-ci-check-typecheck reports/speed-ci-check-test reports/speed-ci-check-e2e reports/speed-ci-check-api reports/speed-ci-check-integration reports/speed-ci-check-secrets reports/speed-ci-check-sast reports/speed-ci-check-sca reports/speed-ci-check-trivy reports/speed-ci-check-gitleaks reports/speed-ci-check-codeql || status=$?
+          python3 .speed-tool/lib/ci_tools.py merge merged reports/speed-ci-check-eval reports/speed-ci-check-lint reports/speed-ci-check-typecheck reports/speed-ci-check-test reports/speed-ci-check-e2e reports/speed-ci-check-api reports/speed-ci-check-integration reports/speed-ci-check-secrets reports/speed-ci-check-sast reports/speed-ci-check-sca reports/speed-ci-check-trivy reports/speed-ci-check-gitleaks reports/speed-ci-check-codeql reports/speed-ci-check-sonarqube || status=$?
           if [ -f merged/summary.md ]; then cat merged/summary.md >> "$GITHUB_STEP_SUMMARY"; fi
           exit "$status"
 
