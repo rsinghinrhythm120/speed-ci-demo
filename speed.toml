@@ -1,0 +1,21 @@
+# speed ci live demo: every check runs a real tool.
+
+[security]
+sast_cmd = "semgrep scan --config p/python --json --quiet --metrics=off ."
+sca_cmd = "python3 -m pip_audit -r requirements.txt -f json"
+severity_threshold = "high"
+
+[ci]
+security_mode = "strict"
+services = ["postgres"]
+parallel = true
+
+[ci.tools.trivy]
+format = "trivy"
+
+[ci.tools.gitleaks]
+format = "gitleaks"
+
+[ci.tools.codeql]
+format = "sarif"
+cmd = "sh scripts/codeql.sh"
