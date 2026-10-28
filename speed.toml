@@ -9,6 +9,7 @@ severity_threshold = "high"
 security_mode = "strict"
 services = ["postgres"]
 parallel = true
+pull_request = true
 
 [ci.tools.trivy]
 format = "trivy"
